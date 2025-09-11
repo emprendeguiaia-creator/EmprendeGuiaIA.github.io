@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmprendeGuía IA</title>
+    
+    <!-- Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Estilos personalizados y animaciones -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+        
+        /* Animaciones */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animated-card { animation: slideInUp 0.5s ease-out forwards; opacity: 0; }
+
+        /* Estilos para la barra de scroll */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Modal y Notificaciones */
+        #modal-overlay { transition: opacity 0.3s ease; }
+        #modal-box { transition: transform 0.3s ease, opacity 0.3s ease; }
+        #toast-notification {
+            transition: transform 0.5s ease, opacity 0.5s ease;
+            transform: translateY(150%);
+        }
+        #toast-notification.show {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 antialiased">
+
+    <!-- Contenedor principal de la aplicación -->
+    <div id="app-container" class="w-full min-h-screen">
+
+        <!-- Pantalla de Carga (Splash) -->
+        <div id="splash-screen" class="screen active flex flex-col justify-center items-center h-screen bg-slate-800 text-white">
+            <svg class="w-24 h-24 text-sky-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 13a8 8 0 0 1 7 7a6 6 0 0 0 3 -5a9 9 0 0 0 6 -8a3 3 0 0 0 -3 -3a9 9 0 0 0 -8 6a6 6 0 0 0 -5 3" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 14a6 6 0 0 0 -3 6a6 6 0 0 0 6 -3" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+            </svg>
+            <h1 class="text-4xl font-bold mt-4">EmprendeGuía IA</h1>
+            <p class="mt-2 text-slate-300">Despegando hacia el éxito...</p>
+        </div>
+
+        <!-- Pantalla de Bienvenida (Onboarding) -->
+        <div id="onboarding-screen" class="screen flex justify-center items-center min-h-screen p-4">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8" style="animation: popIn 0.5s ease-out;">
+                <h2 class="text-2xl font-bold text-slate-800 text-center">¡Bienvenido/a!</h2>
+                <p class="text-slate-500 text-center mt-2 mb-6">Vamos a personalizar tu viaje.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="onboarding-name" class="text-sm font-medium text-slate-600">¿Cómo te llamas?</label>
+                        <input id="onboarding-name" type="text" placeholder="Tu nombre" class="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-sky-500"/>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-slate-600">¿En qué tipo de negocio piensas?</label>
+                        <div id="onboarding-business-types" class="mt-2 space-y-2">
+                            <!-- Opciones de negocio se insertarán aquí -->
+                        </div>
+                    </div>
+                    <button id="onboarding-complete-btn" class="w-full mt-6 bg-sky-500 text-white font-bold py-3 rounded-lg hover:bg-sky-600 disabled:bg-slate-300 transition-all duration-300 transform hover:scale-105">¡Empezar a Emprender!</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor Principal de la App (Dashboard, Lecciones, etc.) -->
+        <div id="main-app" class="screen md:flex">
+            <nav id="main-nav" class="bg-white border-r border-slate-200 md:w-64 md:flex-shrink-0 md:flex flex-col justify-between hidden">
+                <!-- Contenido de la navegación se insertará aquí -->
+            </nav>
+            <nav id="mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-2 z-50 shadow-t-lg">
+                <!-- Contenido de la navegación móvil se insertará aquí -->
+            </nav>
+            <main id="main-content" class="flex-1 pb-16 md:pb-0 bg-slate-50">
+                <!-- Las diferentes secciones se renderizarán aquí -->
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modal para Notificaciones y Confirmaciones -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4 hidden" style="opacity: 0;">
+        <div id="modal-box" class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" style="transform: scale(0.95); opacity: 0;">
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800"></h3>
+            <div id="modal-message" class="text-sm text-slate-600 mt-2 mb-6"></div>
+            <div id="modal-buttons" class="flex justify-end space-x-3"></div>
+        </div>
+    </div>
+
+    <!-- Notificación Toast -->
+    <div id="toast-notification" class="fixed bottom-20 md:bottom-5 right-5 bg-slate-800 text-white py-3 px-5 rounded-lg shadow-xl z-50 hidden">
+        <p id="toast-message"></p>
+    </div>
+
+
+    <!-- Plantillas HTML para renderizado dinámico -->
+    <template id="nav-item-template">
+        <button class="nav-item flex items-center w-full text-left px-4 py-3 rounded-lg text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition-all duration-200">
+            <svg class="nav-icon w-6 h-6 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+            <span class="nav-text font-semibold"></span>
+        </button>
+    </template>
+
+    <template id="mobile-nav-item-template">
+        <button class="nav-item flex flex-col items-center text-slate-500 p-1 rounded-md w-16 h-14 justify-center transition-all duration-200">
+            <svg class="nav-icon w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+            <span class="nav-text text-xs"></span>
+        </button>
+    </template>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONFIGURACIÓN INICIAL ---
+        const XP_PER_TASK = 15;
+        const getLevelFromXp = (xp) => Math.floor(Math.sqrt(xp / 100)) + 1;
+        const getXpForNextLevel = (level) => (level * level) * 100;
+
+        const businessTypes = {
+          ecommerce: "Tienda Online de Ropa",
+          services: "Servicios Profesionales (Consultoría)",
+          content: "Creación de Contenido (Blog/YouTube)",
+          physical: "Restaurante con Presencia Online",
+        };
+
+        const getSectionsData = (businessType) => {
+          const businessName = businessTypes[businessType] || "negocio";
+          return {
+            // 1. Guías paso a paso
+            planNegocio: { category: "guias", title: "Crea tu Plan de Negocio", icon: `<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>`, color: "#0ea5e9", description: "La hoja de ruta para tu éxito.", content: [ { type: 'info', title: "Estructura de un Plan de Negocio", text: "Un buen plan de negocio incluye: Resumen Ejecutivo, Descripción de la Empresa, Análisis de Mercado, Organización y Gestión, Productos o Servicios, Marketing y Ventas, y Proyecciones Financieras." }, { type: 'checklist', taskIdPrefix: 'plan1', title: "Checklist del Plan", items: ["Escribir el Resumen Ejecutivo.", `Definir misión y visión para tu ${businessName}.`, "Analizar al menos 3 competidores.", "Estimar costos de inicio."] }, { type: 'action', title: "Generador de Nombres", text: "¿Necesitas un nombre para tu negocio? Usa nuestra herramienta de IA.", buttonText: "Ir al Generador", action: "tools", prompt: `Dame 10 ideas de nombres creativos para mi ${businessName}` } ] },
+            registroEmpresa: { category: "guias", title: "Registra tu Empresa", icon: `<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>`, color: "#0ea5e9", description: "Formaliza tu operación legalmente.", content: [ { type: 'info', title: "Guía por País (Ejemplos)", text: "El proceso varía. En Perú, necesitas la RUC de SUNAT. En Colombia, el RUT de la DIAN. En México, el RFC del SAT. Investiga siempre el proceso específico de tu localidad." }, { type: 'checklist', taskIdPrefix: 'registro1', title: "Pasos Generales", items: ["Elegir la estructura legal (persona natural, S.A.C, etc.).", "Registrar el nombre de tu marca.", "Obtener tu número de identificación fiscal.", "Abrir una cuenta bancaria para el negocio."] } ] },
+            modeloNegocio: { category: "guias", title: "Elige tu Modelo de Negocio", icon: `<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20V16"/>`, color: "#0ea5e9", description: "Cómo planeas ganar dinero.", content: [ { type: 'info', title: "Business Model Canvas", text: "Usa el Business Model Canvas para visualizar tu negocio. Incluye Socios Clave, Actividades Clave, Propuesta de Valor, Relación con Clientes, Segmentos de Clientes, Canales, Estructura de Costos y Fuentes de Ingresos." }, { type: 'hypothetical', title: "Define tu Propuesta de Valor", text: `Pídele a la IA: "Ayúdame a definir una propuesta de valor única para mi ${businessName}, considerando que mis competidores ofrecen X y Y."` } ] },
+            validarIdea: { category: "guias", title: "Valida tu Idea de Negocio", icon: `<path d="M20.94 18.12a10 10 0 1 1-3.57-12.65"/><path d="m22 2-7 7-4-4"/>`, color: "#0ea5e9", description: "Asegúrate de que hay mercado antes de invertir.", content: [ { type: 'info', title: "Producto Mínimo Viable (MVP)", text: "Crea la versión más simple de tu producto que aún resuelva el problema principal. Para una tienda online, puede ser una página de Instagram con 3 productos. Para un servicio, una landing page que mida el interés." }, { type: 'checklist', taskIdPrefix: 'validar1', title: "Pasos de Validación", items: ["Crear una landing page o perfil social.", "Entrevistar a 10 clientes potenciales.", "Lanzar una preventa para medir el compromiso de compra."] } ] },
+            precios: { category: "guias", title: "Ponle Precio a tu Producto", icon: `<circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/>`, color: "#0ea5e9", description: "Define una estrategia de precios rentable.", content: [ { type: 'info', title: "Estrategias de Precios", text: "Considera el cost-plus (costo + margen), basado en valor (cuánto vale para el cliente) o basado en competencia. No compitas solo por ser el más barato." }, { type: 'hypothetical', title: "Calcula tu Punto de Equilibrio", text: `Pídele a la IA: "Actúa como un asesor financiero. Si mis costos fijos mensuales son $500, y el costo variable por producto es $10, ¿cuántas unidades a $25 necesito vender para alcanzar el punto de equilibrio?"` } ] },
+            
+            // 2. Cursos y Talleres
+            cursoIntro: { category: "cursos", title: "Introducción al Emprendimiento", icon: `<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>`, color: "#10b981", description: "Tu primer paso en el mundo de los negocios.", content: [ { type: 'info', title: "Módulo 1: La Mentalidad Emprendedora", text: "Aprende sobre resiliencia, toma de riesgos calculada y cómo superar el miedo al fracaso." }, { type: 'video', title: "Video: De la Idea a la Acción", url: 'https://placehold.co/600x400/1E293B/FFFFFF?text=Video:+M%C3%B3dulo+1' } ] },
+            talleresVivos: { category: "cursos", vip: true, title: "Talleres en Vivo", icon: `<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>`, color: "#10b981", description: "Sesiones de marketing, finanzas y más.", content: [ { type: 'info', title: "Próximo Taller: Marketing en Redes Sociales", text: "Fecha: 30 de Julio, 2025. Aprende a crear campañas efectivas en Instagram y TikTok. ¡Reserva tu cupo! (Simulación)" } ] },
+            mentorias: { category: "cursos", vip: true, title: "Sesiones de Mentoría", icon: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`, color: "#10b981", description: "Asesoría 1-a-1 con expertos.", content: [ { type: 'info', title: "Reserva tu Asesoría", text: "Obtén feedback personalizado sobre tu proyecto. Los miembros VIP tienen una sesión gratuita al mes." } ] },
+
+            // 3. Recursos Descargables (Actualizado)
+            recursos: { category: "recursos", vip: true, title: "Recursos Descargables", icon: `<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>`, color: "#3b82f6", description: "Plantillas y guías listas para usar.", content: [ { type: 'download', title: "Plantilla de Plan de Negocios", text: "Un documento completo para estructurar tu idea, mercado, finanzas y operaciones." }, { type: 'download', title: "Hoja de Cálculo de Presupuesto", text: "Controla tus gastos e ingresos iniciales con esta plantilla de Excel/Sheets." }, { type: 'download', title: "Contrato Base para Freelancers", text: "Un modelo de contrato para tus primeros colaboradores." }, { type: 'download', title: "Checklist de Lanzamiento", text: "Asegúrate de no olvidar ningún paso antes de tu gran día." } ] },
+            
+            // 4. Inspiración y Comunidad (Actualizado)
+            inspiracion: { category: "comunidad", title: "Historias de Éxito", icon: `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`, color: "#f59e0b", description: "Emprendedores reales que lo lograron.", content: [ { type: 'info', title: "Entrevista: De Cero a 1000 Clientes", text: "Lee la historia de 'Ana', quien lanzó su tienda online de productos ecológicos y alcanzó sus primeras 1000 ventas en 6 meses." } ] },
+            ideasNegocio: { category: "comunidad", title: "Ideas de Negocio 2025", icon: `<path d="M12 3-1.9 5.8-5.8 1.9 5.8 1.9L12 21l1.9-5.8 5.8-1.9-5.8-1.9z"/>`, color: "#f59e0b", description: "Negocios rentables que puedes empezar hoy.", content: [ { type: 'info', title: "Idea: Servicios de IA para Negocios Locales", text: "Ofrece a restaurantes, tiendas, etc., la creación de chatbots de atención al cliente, menús con QR inteligentes o gestión de reseñas online con IA." } ] },
+
+            // 5. Marketplace y Red de Apoyo (Nuevas secciones VIP)
+            marketplace: { category: "avanzado", vip: true, title: "Marketplace de Talentos", icon: `<path d="M18 8h-1a4 4 0 0 0-7 0h-1a4 4 0 0 0-7 0h-1"/><path d="M3 16h18"/><path d="M12 12v8"/>`, color: "#8b5cf6", description: "Encuentra socios, freelancers y proveedores.", content: [ { type: 'info', title: "Encuentra Colaboradores", text: "Publica tu proyecto y recibe propuestas de diseñadores, programadores y más. (Función en desarrollo)" } ] },
+            redApoyo: { category: "avanzado", vip: true, title: "Red de Apoyo", icon: `<path d="M3 21h18"/><path d="M7 21V8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v13"/>`, color: "#8b5cf6", description: "Directorio de incubadoras, inversionistas y más.", content: [ { type: 'info', title: "Mapa de Oportunidades (Perú)", text: "Directorio de incubadoras como 'Startup Perú', coworkings en Lima y Arequipa, y fondos de capital semilla. (Función en desarrollo)" } ] },
+          };
+        };
+
+        const navConfig = {
+            home: { text: "Inicio", icon: `<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>` },
+            learn: { text: "Aprender", icon: `<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>` },
+            tools: { text: "Herramientas IA", icon: `<path d="m12 3-1.9 5.8-5.8 1.9 5.8 1.9L12 21l1.9-5.8 5.8-1.9-5.8-1.9z"/>` },
+            community: { text: "Comunidad", icon: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>` },
+            blog: { text: "Blog", icon: `<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-2c0-1.1.9-2 2-2h2"/>` },
+            account: { text: "Cuenta", icon: `<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>` }
+        };
+
+        // --- ESTADO GLOBAL DE LA APP ---
+        let appState = {
+            userProfile: null,
+            communityPosts: [],
+            currentScreen: 'splash',
+            activeNav: 'home',
+        };
+
+        // --- ELEMENTOS DEL DOM ---
+        const mainContentEl = document.getElementById('main-content');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalBox = document.getElementById('modal-box');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalButtons = document.getElementById('modal-buttons');
+        const toast = document.getElementById('toast-notification');
+        const toastMessage = document.getElementById('toast-message');
+        
+        // --- FUNCIONES DE RENDERIZADO ---
+        function renderDashboard() {
+            const { userProfile } = appState;
+            const currentLevel = getLevelFromXp(userProfile.xp);
+            const xpForNext = getXpForNextLevel(currentLevel);
+            const xpForCurrent = getXpForNextLevel(currentLevel - 1);
+            const progressPercentage = Math.max(0, Math.min(100, ((userProfile.xp - xpForCurrent) / (xpForNext - xpForCurrent)) * 100));
+            const lastPost = appState.communityPosts.length > 0 ? appState.communityPosts[appState.communityPosts.length - 1] : null;
+
+            mainContentEl.innerHTML = `
+                <div class="p-4 md:p-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-800" style="animation: slideInUp 0.5s;">Hola, ${userProfile.name}!</h1>
+                    <p class="text-slate-500 mt-1" style="animation: slideInUp 0.6s;">Listo para potenciar tu ${businessTypes[userProfile.businessType]}?</p>
+                    
+                    <div class="mt-6 bg-white p-4 rounded-xl shadow-sm border animated-card" style="animation-delay: 0.1s;">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-slate-700">Nivel ${currentLevel}</span>
+                            <span class="text-sm text-slate-500">${userProfile.xp} / ${xpForNext} XP</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-3">
+                            <div class="bg-gradient-to-r from-sky-400 to-blue-500 h-3 rounded-full transition-all duration-500" style="width: ${progressPercentage}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="animated-card" style="animation-delay: 0.2s;">
+                            <h2 class="text-xl font-bold text-slate-800 mb-3">Continuar Aprendiendo</h2>
+                            <button class="w-full bg-white p-4 rounded-xl shadow-sm border flex items-center text-left transition-all duration-200 hover:bg-sky-50 hover:border-sky-300" onclick="document.querySelector('[data-nav=learn]').click()">
+                                <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 mr-4 bg-sky-500 text-white">
+                                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800">Explorar todas las guías</h3>
+                                    <p class="text-sm text-slate-500">Desde planes de negocio hasta marketing.</p>
+                                </div>
+                            </button>
+                        </div>
+
+                        <div class="animated-card" style="animation-delay: 0.3s;">
+                            <h2 class="text-xl font-bold text-slate-800 mb-3">Herramienta del Día</h2>
+                            <button class="w-full bg-white p-4 rounded-xl shadow-sm border flex items-center text-left transition-all duration-200 hover:bg-red-50 hover:border-red-300" onclick="document.querySelector('[data-nav=tools]').click()">
+                                <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 mr-4 bg-red-500 text-white">
+                                     <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8-5.8 1.9 5.8 1.9L12 21l1.9-5.8 5.8-1.9-5.8-1.9z"/></svg>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800">Generador de Ideas</h3>
+                                    <p class="text-sm text-slate-500">Pide a la IA que te ayude a crear un pitch.</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    ${lastPost ? `
+                    <div class="animated-card mt-6" style="animation-delay: 0.4s;">
+                        <h2 class="text-xl font-bold text-slate-800 mb-3">Desde la Comunidad</h2>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border">
+                            <p class="text-slate-600 italic">"${lastPost.content}"</p>
+                            <button class="mt-3 text-sky-600 font-semibold text-sm hover:underline" onclick="document.querySelector('[data-nav=community]').click()">Ver más en la comunidad →</button>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function renderLearn() {
+            const { userProfile } = appState;
+            const sections = getSectionsData(userProfile.businessType);
+            const categories = {
+                guias: { title: "Guías Paso a Paso", items: [] },
+                cursos: { title: "Cursos y Talleres", items: [] },
+                recursos: { title: "Recursos Descargables", items: [] },
+                comunidad: { title: "Inspiración", items: [] },
+                avanzado: { title: "Módulos Avanzados (VIP)", items: [] },
+            };
+
+            Object.entries(sections).forEach(([key, section]) => {
+                if (categories[section.category]) {
+                    categories[section.category].items.push({ key, ...section });
+                }
+            });
+
+            mainContentEl.innerHTML = `
+                <div class="p-4 md:p-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Centro de Aprendizaje</h1>
+                    <p class="text-slate-500 mt-1">Todo lo que necesitas para empezar y crecer.</p>
+                    <div id="learn-sections" class="mt-6 space-y-8"></div>
+                </div>
+            `;
+            const learnSectionsEl = document.getElementById('learn-sections');
+            Object.values(categories).forEach(cat => {
+                if (cat.items.length === 0) return;
+                const sectionEl = document.createElement('div');
+                sectionEl.innerHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-4">${cat.title}</h2>`;
+                const gridEl = document.createElement('div');
+                gridEl.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5';
+                
+                cat.items.forEach(section => {
+                    const isVip = section.vip || false;
+                    const canAccess = !isVip || userProfile.isVip;
+                    const card = document.createElement('button');
+                    card.className = `w-full bg-white p-4 rounded-xl shadow-sm border flex items-start text-left transition-all duration-200 h-full ${canAccess ? 'hover:bg-sky-50 hover:border-sky-300' : 'bg-slate-100 cursor-not-allowed'}`;
+                    card.disabled = !canAccess;
+                    if (canAccess) {
+                        card.onclick = () => renderLessonDetail(section.key);
+                    } else {
+                        card.onclick = () => {
+                            appState.activeNav = 'account';
+                            renderScreen();
+                        }
+                    }
+                    card.innerHTML = `
+                        <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 mr-4" style="background-color: ${canAccess ? section.color : '#cbd5e1'}">
+                            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${canAccess ? section.icon : `<path d="M12 11V15"/><path d="M12 18H12.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/>`}</svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-lg ${canAccess ? 'text-slate-800' : 'text-slate-500'}">${section.title}</h3>
+                            <p class="text-sm ${canAccess ? 'text-slate-500' : 'text-slate-400'}">${section.description}</p>
+                        </div>
+                        ${isVip ? `<span class="ml-4 text-xs font-bold ${canAccess ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600'} px-2 py-1 rounded-full">VIP</span>` : ''}
+                    `;
+                    gridEl.appendChild(card);
+                });
+                sectionEl.appendChild(gridEl);
+                learnSectionsEl.appendChild(sectionEl);
+            });
+        }
+        
+        function renderLessonDetail(sectionKey) {
+            const { userProfile } = appState;
+            const section = getSectionsData(userProfile.businessType)[sectionKey];
+            mainContentEl.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <header class="p-4 flex items-center justify-between text-white sticky top-0 shadow-md z-10" style="background-color: ${section.color}">
+                        <button id="back-to-learn-list" class="mr-4 p-2 rounded-full hover:bg-white/20 transition-colors">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                        </button>
+                        <h2 class="text-xl font-bold">${section.title}</h2>
+                        <button id="add-note-btn" class="p-2 rounded-full hover:bg-white/20 transition-colors" title="Tomar una nota sobre esta lección">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        </button>
+                    </header>
+                    <div id="lesson-detail-content" data-section-key="${sectionKey}" class="p-4 md:p-8 flex-grow overflow-y-auto space-y-6">
+                        <!-- Contenido de la lección -->
+                    </div>
+                </div>
+            `;
+            document.getElementById('back-to-learn-list').onclick = renderLearn;
+            document.getElementById('add-note-btn').onclick = () => {
+                const noteTitle = `Notas sobre: ${section.title}`;
+                showModal(
+                    'Añadir Nota',
+                    'Escribe tu apunte, idea o tarea relacionada con esta lección.',
+                    [
+                        { text: 'Cancelar', class: 'bg-slate-200 text-slate-800', action: hideModal },
+                        { text: 'Guardar Nota', class: 'bg-sky-500 text-white', action: () => {
+                            const content = document.getElementById('modal-textarea').value;
+                            if (content.trim()) {
+                                addNote(noteTitle, content, sectionKey);
+                                showToast('Nota guardada en tu perfil.');
+                                hideModal();
+                            } else {
+                                showToast('La nota no puede estar vacía.', 'error');
+                            }
+                        }}
+                    ],
+                    `<textarea id="modal-textarea" class="w-full p-2 border rounded-lg h-24 mt-2" placeholder="Ej: Recordar analizar a la competencia mencionada..."></textarea>`
+                );
+            };
+
+            const contentEl = document.getElementById('lesson-detail-content');
+            section.content.forEach(item => {
+                const isVip = item.vip || false;
+                const canAccess = !isVip || userProfile.isVip;
+                const card = document.createElement('div');
+                
+                if (!canAccess) {
+                    card.className = 'bg-slate-100 p-5 rounded-xl border border-slate-200 shadow-sm text-center';
+                    card.innerHTML = `
+                        <svg class="w-12 h-12 mx-auto text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11V15"/><path d="M12 18H12.01"/><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg>
+                        <h3 class="font-bold text-lg text-slate-700 mt-2">${item.title || "Contenido VIP Exclusivo"}</h3>
+                        <p class="text-slate-500 text-sm mt-1">Suscríbete para desbloquear esta lección y más.</p>
+                        <button class="upgrade-btn mt-4 bg-amber-400 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-amber-300 transition-colors">Ver Planes VIP</button>
+                    `;
+                } else {
+                    card.className = 'bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm';
+                    let contentHTML = '';
+                    switch (item.type) {
+                        case 'image': contentHTML = `<img src="${item.url}" alt="${item.alt || 'Imagen de la lección'}" class="w-full rounded-lg shadow-md border">`; break;
+                        case 'info': contentHTML = `<h3 class="font-bold text-lg text-slate-800 mb-2">${item.title}</h3><p class="text-slate-600 leading-relaxed">${item.text}</p>`; break;
+                        case 'checklist': contentHTML = `<h3 class="font-bold text-lg text-slate-800 mb-2">${item.title}</h3><div class="space-y-3 mt-3">${item.items.map((text, i) => { const taskId = `${item.taskIdPrefix}-${i}`; const isCompleted = userProfile.completedTasks.includes(taskId); return `<div class="flex items-center cursor-pointer group" data-task-id="${taskId}"> <div class="w-6 h-6 mr-3 flex-shrink-0">${isCompleted ? `<svg class="w-6 h-6 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>` : `<svg class="w-6 h-6 text-slate-300 group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`}</div> <span class="text-slate-600 ${isCompleted ? 'line-through text-slate-400' : ''}">${text}</span> </div>`; }).join('')}</div>`; break;
+                        case 'hypothetical': contentHTML = `<div class="bg-amber-100 p-4 rounded-lg border border-amber-200"><h3 class="font-bold text-lg text-amber-800 mb-2">${item.title}</h3><p class="text-amber-700 leading-relaxed">${item.text}</p> <button class="ai-prompt-btn mt-4 text-xs inline-flex items-center font-semibold text-red-500 hover:text-red-700" data-prompt="${item.text}"> <svg class="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8-5.8 1.9 5.8 1.9L12 21l1.9-5.8 5.8-1.9-5.8-1.9z"/></svg> Pedir consejo a la IA </button></div>`; break;
+                        case 'quiz': contentHTML = `<div class="quiz-container" data-task-id="${item.taskIdPrefix}-quiz" data-correct-answer="${item.correctAnswer}"><h3 class="font-bold text-lg text-slate-800 mb-2">${item.title}</h3><p class="text-slate-600 leading-relaxed mb-4">${item.question}</p><div class="space-y-2">${item.options.map((option, i) => `<button class="quiz-option w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-slate-50" data-option-index="${i}">${option}</button>`).join('')}</div></div>`; break;
+                        case 'video': contentHTML = `<div class="bg-slate-800 p-4 rounded-lg text-white text-center cursor-pointer hover:bg-slate-700"> <svg class="w-12 h-12 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> <p class="mt-2 font-semibold">${item.title || 'Ver Video'}</p> </div>`; break;
+                        case 'download': contentHTML = `<div class="bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-center justify-between"><div><h4 class="font-bold text-blue-800">${item.title}</h4><p class="text-blue-700 text-sm">${item.text}</p></div><button class="download-btn bg-blue-500 text-white p-3 rounded-full hover:bg-blue-600 transition-colors"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button></div>`; break;
+                        case 'action': contentHTML = `<div class="bg-sky-50 p-4 rounded-lg border border-sky-200 text-center"><h3 class="font-bold text-lg text-sky-800 mb-2">${item.title}</h3><p class="text-sky-700 leading-relaxed mb-4">${item.text}</p><button class="action-btn bg-sky-500 text-white font-bold py-2 px-5 rounded-lg hover:bg-sky-600 transition-colors" data-action="${item.action}" data-prompt="${item.prompt}">${item.buttonText}</button></div>`; break;
+                    }
+                    card.innerHTML = contentHTML;
+                }
+                contentEl.appendChild(card);
+            });
+
+            // Añadir event listeners
+            contentEl.querySelectorAll('.upgrade-btn').forEach(btn => btn.onclick = () => { appState.activeNav = 'account'; renderScreen(); });
+            contentEl.querySelectorAll('.download-btn').forEach(btn => btn.onclick = () => showToast('Descarga iniciada (simulación).'));
+            contentEl.querySelectorAll('[data-task-id]').forEach(el => {
+                const taskId = el.dataset.taskId;
+                if (!userProfile.completedTasks.includes(taskId)) {
+                    if (el.classList.contains('quiz-container')) {
+                        el.querySelectorAll('.quiz-option').forEach(opt => opt.onclick = (e) => handleQuizSelection(e, taskId, parseInt(el.dataset.correctAnswer), sectionKey));
+                    } else {
+                       el.onclick = () => handleTaskCompletion(taskId, sectionKey);
+                    }
+                }
+            });
+            contentEl.querySelectorAll('.ai-prompt-btn').forEach(btn => {
+                btn.onclick = () => {
+                    appState.activeNav = 'tools';
+                    renderScreen();
+                    document.getElementById('ai-chat-input').value = btn.dataset.prompt;
+                    document.getElementById('ai-chat-input').focus();
+                };
+            });
+            contentEl.querySelectorAll('.action-btn').forEach(btn => {
+                btn.onclick = () => {
+                    appState.activeNav = btn.dataset.action;
+                    renderScreen();
+                    if(btn.dataset.prompt) {
+                        document.getElementById('ai-chat-input').value = btn.dataset.prompt;
+                        document.getElementById('ai-chat-input').focus();
+                    }
+                };
+            });
+        }
+        
+        function handleQuizSelection(event, taskId, correctAnswer, sectionKey) {
+            const container = event.target.closest('.quiz-container');
+            const selectedIndex = parseInt(event.target.dataset.optionIndex);
+            
+            container.querySelectorAll('.quiz-option').forEach(opt => opt.disabled = true);
+
+            if (selectedIndex === correctAnswer) {
+                event.target.classList.add('bg-green-100', 'border-green-300');
+                handleTaskCompletion(taskId, sectionKey);
+            } else {
+                event.target.classList.add('bg-red-100', 'border-red-300');
+                container.querySelector(`[data-option-index="${correctAnswer}"]`).classList.add('bg-green-100', 'border-green-300');
+            }
+        }
+        
+        function renderTools() {
+            mainContentEl.innerHTML = `
+                <div class="h-full flex flex-col bg-white">
+                    <header class="p-4 flex items-center justify-between text-slate-800 sticky top-0 bg-white border-b z-10">
+                        <div class="flex items-center">
+                            <h1 class="text-xl md:text-2xl font-bold">Herramientas con IA</h1>
+                            ${appState.userProfile.isVip ? '<span class="ml-3 text-xs font-bold bg-amber-400 text-slate-800 px-2 py-1 rounded-full">VIP</span>' : ''}
+                        </div>
+                    </header>
+                    
+                    <div class="p-4 md:p-6">
+                        <h2 class="font-bold text-slate-700 mb-3">Generadores Automáticos</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <button class="tool-btn p-3 bg-slate-100 rounded-lg text-center hover:bg-slate-200 transition-colors" data-prompt="Dame 10 ideas de nombres creativos para mi ${businessTypes[appState.userProfile.businessType]}">
+                                <span class="text-2xl">🏷️</span>
+                                <p class="text-xs font-semibold mt-1">Nombres</p>
+                            </button>
+                            <button class="tool-btn p-3 bg-slate-100 rounded-lg text-center hover:bg-slate-200 transition-colors" data-prompt="Actúa como un experto en branding y dame 3 conceptos de logo para mi ${businessTypes[appState.userProfile.businessType]}, describiendo colores y formas.">
+                                <span class="text-2xl">🎨</span>
+                                <p class="text-xs font-semibold mt-1">Ideas de Logo</p>
+                            </button>
+                            <button class="tool-btn p-3 bg-slate-100 rounded-lg text-center hover:bg-slate-200 transition-colors" data-prompt="Créame un 'elevator pitch' de 60 segundos para mi ${businessTypes[appState.userProfile.businessType]}.">
+                                <span class="text-2xl">🚀</span>
+                                <p class="text-xs font-semibold mt-1">Elevator Pitch</p>
+                            </button>
+                            ${appState.userProfile.isVip ? `
+                            <button class="tool-btn p-3 bg-slate-100 rounded-lg text-center hover:bg-slate-200 transition-colors" data-prompt="Como experto en análisis de negocios, realiza un análisis FODA (SWOT) para mi idea de negocio: una ${businessTypes[appState.userProfile.businessType]}.">
+                                <span class="text-2xl">💡</span>
+                                <p class="text-xs font-semibold mt-1">Análisis FODA</p>
+                            </button>` : ''}
+                        </div>
+                    </div>
+
+                    <div id="ai-chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto border-t">
+                        <!-- Los mensajes del chat se insertan aquí -->
+                    </div>
+                    <div class="p-4 bg-white border-t">
+                        <div class="flex items-center bg-slate-100 rounded-full p-2">
+                            <input id="ai-chat-input" type="text" placeholder="Chatea con tu Asistente IA..." class="w-full bg-transparent focus:outline-none px-4 text-slate-700">
+                            <button id="ai-send-btn" class="bg-sky-500 text-white rounded-full p-3 hover:bg-sky-600 transition-colors flex-shrink-0">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const messagesEl = document.getElementById('ai-chat-messages');
+            appState.userProfile.aiChatHistory.forEach(msg => addChatMessage(msg.role, msg.text, false));
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            const sendBtn = document.getElementById('ai-send-btn');
+            const inputEl = document.getElementById('ai-chat-input');
+            
+            const handleSend = async (userMessage) => {
+                if (!userMessage) return;
+                addChatMessage('user', userMessage);
+                const loadingBubble = addChatMessage('bot', '...', false);
+                loadingBubble.querySelector('.chat-bubble-content').innerHTML = `<div class="flex items-center"><div class="w-2 h-2 bg-slate-500 rounded-full animate-pulse mr-1"></div><div class="w-2 h-2 bg-slate-500 rounded-full animate-pulse mr-1" style="animation-delay: 0.1s;"></div><div class="w-2 h-2 bg-slate-500 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div></div>`;
+
+                try {
+                    let fullPrompt = `Eres 'EmprendeBot', un asistente experto en emprendimiento digital. El usuario se llama ${appState.userProfile.name} y su negocio es una "${businessTypes[appState.userProfile.businessType]}". Proporciona respuestas claras, concisas, prácticas y motivadoras en texto plano (sin Markdown). Tu objetivo es guiar y empoderar.`;
+                    if (appState.userProfile.isVip) {
+                        fullPrompt += " El usuario es VIP, así que da respuestas más detalladas, con ejemplos y estrategias avanzadas."
+                    }
+                    fullPrompt += ` Pregunta del usuario: ${userMessage}`;
+
+                    const chatHistory = [{ role: "user", parts: [{ text: fullPrompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = ""; // Dejar vacío
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`API error: ${response.statusText}`);
+                    const result = await response.json();
+                    
+                    let botResponse = "Lo siento, no pude procesar tu solicitud. Inténtalo de nuevo.";
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                      botResponse = result.candidates[0].content.parts[0].text;
+                    }
+                    loadingBubble.remove();
+                    addChatMessage('bot', botResponse);
+                } catch (error) {
+                    loadingBubble.remove();
+                    addChatMessage('bot', "Hubo un problema de conexión. Por favor, revisa tu conexión e inténtalo más tarde.");
+                }
+            };
+            
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.onclick = () => {
+                    inputEl.value = '';
+                    handleSend(btn.dataset.prompt);
+                };
+            });
+
+            sendBtn.onclick = () => {
+                const message = inputEl.value.trim();
+                if (message) {
+                    inputEl.value = '';
+                    handleSend(message);
+                }
+            };
+            inputEl.onkeydown = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendBtn.click();
+                }
+            };
+        }
+
+        function addChatMessage(role, text, shouldSave = true) {
+            if (shouldSave) {
+                appState.userProfile.aiChatHistory.push({ role, text });
+                saveData(appState.userProfile);
+            }
+            const messagesEl = document.getElementById('ai-chat-messages');
+            const bubbleWrapper = document.createElement('div');
+            bubbleWrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            bubbleWrapper.innerHTML = `<div class="${role === 'user' ? 'bg-sky-500 text-white' : 'bg-slate-200 text-slate-700'} p-3 rounded-lg max-w-xs md:max-w-md break-words chat-bubble-content">${text}</div>`;
+            messagesEl.appendChild(bubbleWrapper);
+            if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+            return bubbleWrapper;
+        }
+
+        function renderCommunity() {
+            mainContentEl.innerHTML = `
+                <div class="p-4 md:p-8 h-full flex flex-col">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Comunidad</h1>
+                    <p class="text-slate-500 mt-1 mb-6">Comparte y aprende de otros emprendedores.</p>
+                    
+                    <div class="bg-white p-4 rounded-xl shadow-sm border mb-6">
+                        <textarea id="new-post-content" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="Comparte un consejo o una pregunta (anónimo)..."></textarea>
+                        <button id="add-post-btn" class="mt-2 w-full bg-sky-500 text-white font-bold py-2 rounded-lg hover:bg-sky-600 transition-colors">Publicar</button>
+                    </div>
+
+                    <div id="community-posts" class="flex-grow overflow-y-auto space-y-4 pr-2">
+                        <!-- Posts se insertarán aquí -->
+                    </div>
+                </div>
+            `;
+            
+            const postsContainer = document.getElementById('community-posts');
+            if (appState.communityPosts.length === 0) {
+                postsContainer.innerHTML = `<div class="text-center mt-10 text-slate-500">Sé el primero en publicar algo.</div>`;
+            } else {
+                appState.communityPosts.slice().reverse().forEach(post => {
+                    const postEl = document.createElement('div');
+                    postEl.className = 'bg-white p-4 rounded-xl shadow-sm border';
+                    postEl.innerHTML = `
+                        <div class="flex items-start justify-between">
+                            <p class="text-slate-700 pr-4">${post.content}</p>
+                            ${post.isVip ? '<span class="flex-shrink-0 text-xs font-bold bg-amber-100 text-amber-800 px-2 py-1 rounded-full">VIP</span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">${new Date(post.timestamp).toLocaleString()}</p>
+                    `;
+                    postsContainer.appendChild(postEl);
+                });
+            }
+            
+            document.getElementById('add-post-btn').onclick = () => {
+                const contentEl = document.getElementById('new-post-content');
+                const content = contentEl.value.trim();
+                if (content) {
+                    const newPost = { 
+                        id: Date.now(), 
+                        content: content, 
+                        timestamp: Date.now(),
+                        isVip: appState.userProfile.isVip
+                    };
+                    appState.communityPosts.push(newPost);
+                    saveCommunityData(appState.communityPosts);
+                    contentEl.value = '';
+                    renderCommunity();
+                    showToast('¡Tu consejo ha sido publicado!');
+                }
+            };
+        }
+
+        function renderBlog() {
+            mainContentEl.innerHTML = `
+                <div class="p-4 md:p-8">
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Blog del Emprendedor</h1>
+                    <p class="text-slate-500 mt-1">Consejos, tendencias y análisis para tu negocio.</p>
+                    <div class="mt-6 space-y-6">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border">
+                            <p class="text-sm text-sky-600 font-semibold">MARKETING DIGITAL</p>
+                            <h2 class="font-bold text-xl text-slate-800 mt-1">5 Consejos para Conseguir tus Primeros 100 Clientes</h2>
+                            <p class="text-slate-600 mt-2">No necesitas un gran presupuesto. Empieza creando contenido de valor en la red social donde está tu público. Colabora con micro-influencers y ofrece una promoción irresistible para los primeros compradores...</p>
+                            <button class="mt-4 text-sky-600 font-semibold hover:underline text-sm">Leer artículo completo →</button>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border">
+                            <p class="text-sm text-red-600 font-semibold">ERRORES COMUNES</p>
+                            <h2 class="font-bold text-xl text-slate-800 mt-1">El Error #1 al Emprender y Cómo Evitarlo</h2>
+                            <p class="text-slate-600 mt-2">El error más común es no validar tu idea. Muchos emprendedores se enamoran de su solución sin confirmar si resuelven un problema real. Antes de construir nada, habla con tus potenciales clientes...</p>
+                            <button class="mt-4 text-sky-600 font-semibold hover:underline text-sm">Leer artículo completo →</button>
+                        </div>
+                         <div class="bg-white p-5 rounded-xl shadow-sm border">
+                            <p class="text-sm text-green-600 font-semibold">FINANZAS</p>
+                            <h2 class="font-bold text-xl text-slate-800 mt-1">Entendiendo el CAC y LTV: Las Métricas que Definen tu Negocio</h2>
+                            <p class="text-slate-600 mt-2">El Costo de Adquisición de Cliente (CAC) y el Valor de Vida del Cliente (LTV) son cruciales. Si tu LTV es 3 veces mayor que tu CAC, tienes un modelo de negocio sostenible. Te enseñamos a calcularlos...</p>
+                            <button class="mt-4 text-sky-600 font-semibold hover:underline text-sm">Leer artículo completo →</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderAccount() {
+            const { userProfile } = appState;
+            const currentLevel = getLevelFromXp(userProfile.xp);
+            mainContentEl.innerHTML = `
+                <div class="p-4 md:p-8">
+                    <div class="flex flex-col items-center my-8">
+                        <div class="relative">
+                            <div class="w-24 h-24 rounded-full bg-slate-300 flex items-center justify-center mb-4 ring-4 ring-white shadow-md">
+                                <svg class="w-12 h-12 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            </div>
+                            ${userProfile.isVip ? `<div class="absolute bottom-4 -right-1 bg-amber-400 p-1 rounded-full ring-4 ring-white"><svg class="w-5 h-5 text-slate-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>` : ''}
+                        </div>
+                        <h1 class="text-3xl font-bold text-slate-800">${userProfile.name}</h1>
+                        <p class="text-slate-500 mt-1">Nivel ${currentLevel} - Emprendedor/a Digital</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl shadow-sm border mb-6">
+                        <div class="space-y-2">
+                             <button id="my-notes-btn" class="w-full flex items-center p-3 text-slate-700 hover:bg-slate-50 rounded-lg">
+                                <svg class="w-5 h-5 mr-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                <span>Mis Notas</span>
+                                <span class="ml-auto text-xs bg-slate-200 text-slate-600 font-semibold px-2 py-1 rounded-full">${userProfile.notes.length}</span>
+                            </button>
+                            <button id="settings-btn" class="w-full flex items-center p-3 text-slate-700 hover:bg-slate-50 rounded-lg">
+                                <svg class="w-5 h-5 mr-3 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                <span>Ajustes y Perfil</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="vip-section" class="bg-slate-800 text-white p-6 rounded-2xl shadow-lg">
+                        <!-- Contenido VIP se renderizará aquí -->
+                    </div>
+                </div>
+            `;
+            document.getElementById('settings-btn').onclick = renderSettings;
+            document.getElementById('my-notes-btn').onclick = renderMyNotes;
+
+            const vipSection = document.getElementById('vip-section');
+            if (userProfile.isVip) {
+                vipSection.innerHTML = `
+                    <div class="flex items-center mb-4">
+                        <svg class="w-8 h-8 text-amber-400 mr-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <div>
+                            <h2 class="font-bold text-xl">¡Eres Miembro VIP!</h2>
+                            <p class="text-sm text-slate-300">Disfruta de todo el contenido exclusivo.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                vipSection.innerHTML = `
+                    <div class="flex items-center mb-4">
+                        <svg class="w-8 h-8 text-amber-400 mr-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        <div>
+                            <h2 class="font-bold text-xl">EmprendeGuía VIP</h2>
+                            <p class="text-sm text-slate-300">Desbloquea tu máximo potencial.</p>
+                        </div>
+                    </div>
+                    <ul class="list-disc list-inside space-y-2 text-slate-200 mb-6">
+                        <li>Todos los cursos, guías y recursos</li>
+                        <li>Herramientas IA avanzadas (Análisis FODA)</li>
+                        <li>Acceso a Marketplace y Red de Apoyo</li>
+                        <li>Distintivo VIP en la comunidad</li>
+                    </ul>
+                    <button id="subscribe-btn" class="w-full bg-amber-400 text-slate-800 font-bold py-3 rounded-lg hover:bg-amber-300 transition-colors transform hover:scale-105">Suscribirse por $4.99/mes</button>
+                `;
+                document.getElementById('subscribe-btn').onclick = () => {
+                    appState.userProfile.isVip = true;
+                    saveData(appState.userProfile);
+                    renderAccount();
+                    showToast('¡Felicidades! Ahora eres VIP.');
+                };
+            }
+        }
+        
+        function renderMyNotes() {
+            const { notes } = appState.userProfile;
+            mainContentEl.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <header class="p-4 flex items-center text-slate-800 sticky top-0 bg-white border-b z-10">
+                        <button id="back-to-account" class="mr-4 p-2 rounded-full hover:bg-slate-100 transition-colors">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                        </button>
+                        <h2 class="text-xl font-bold">Mis Notas</h2>
+                    </header>
+                    <div class="p-4 md:p-8 flex-grow overflow-y-auto">
+                        <div id="notes-list" class="space-y-4"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('back-to-account').onclick = renderAccount;
+            const notesListEl = document.getElementById('notes-list');
+            if (notes.length === 0) {
+                notesListEl.innerHTML = `
+                    <div class="text-center mt-16 border-2 border-dashed border-slate-300 p-10 rounded-2xl">
+                        <svg class="w-16 h-16 mx-auto text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
+                        <p class="mt-4 text-lg font-semibold text-slate-600">No tienes notas guardadas.</p>
+                        <p class="text-sm text-slate-400">Ve a una lección y usa el icono '+' para tomar apuntes.</p>
+                    </div>`;
+            } else {
+                notes.slice().reverse().forEach(note => {
+                    const card = document.createElement('div');
+                    card.className = 'w-full bg-white p-4 rounded-xl shadow-sm border';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                             <h3 class="font-bold text-lg text-slate-800">${note.title}</h3>
+                             <button class="delete-note-btn p-1 text-slate-400 hover:text-red-500" data-note-id="${note.id}">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                             </button>
+                        </div>
+                        <p class="text-sm text-slate-600 mt-2 whitespace-pre-wrap">${note.content}</p>
+                        <button class="text-xs text-sky-600 font-semibold mt-3 hover:underline" onclick="appState.activeNav='learn'; renderScreen(); setTimeout(() => renderLessonDetail('${note.lessonKey}'), 50)">Ir a la lección →</button>
+                    `;
+                    notesListEl.appendChild(card);
+                });
+                notesListEl.querySelectorAll('.delete-note-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const noteId = btn.dataset.noteId;
+                        showModal('Confirmar Eliminación', '¿Estás seguro de que quieres eliminar esta nota?', [
+                            { text: 'Cancelar', class: 'bg-slate-200 text-slate-800', action: hideModal },
+                            { text: 'Eliminar', class: 'bg-red-500 text-white', action: () => {
+                                deleteNote(noteId);
+                                hideModal();
+                                renderMyNotes();
+                                showToast('Nota eliminada.');
+                            }}
+                        ]);
+                    };
+                });
+            }
+        }
+
+        function renderSettings() {
+             mainContentEl.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <header class="p-4 flex items-center text-slate-800 sticky top-0 bg-white border-b z-10">
+                        <button id="back-to-account" class="mr-4 p-2 rounded-full hover:bg-slate-100 transition-colors">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                        </button>
+                        <h2 class="text-xl font-bold">Ajustes</h2>
+                    </header>
+                    <div class="p-4 md:p-8 flex-grow overflow-y-auto space-y-6">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border">
+                            <h3 class="font-bold text-lg text-slate-800 mb-4">Editar Perfil</h3>
+                            <label for="settings-name" class="text-sm font-medium text-slate-600">Nombre</label>
+                            <input id="settings-name" type="text" class="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-sky-500" value="${appState.userProfile.name}">
+                            <button id="save-name-btn" class="mt-4 w-full bg-sky-500 text-white font-bold py-3 rounded-lg hover:bg-sky-600 transition-colors">Guardar Nombre</button>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-xl shadow-sm border">
+                            <h3 class="font-bold text-lg text-red-600 mb-2">Zona de Peligro</h3>
+                            <p class="text-sm text-slate-500 mb-4">Estas acciones no se pueden deshacer.</p>
+                            <button id="reset-progress-btn" class="w-full bg-red-500 text-white font-bold py-3 rounded-lg hover:bg-red-600 transition-colors">Reiniciar Progreso</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('back-to-account').onclick = renderAccount;
+            document.getElementById('save-name-btn').onclick = () => {
+                const newName = document.getElementById('settings-name').value.trim();
+                if (newName) {
+                    appState.userProfile.name = newName;
+                    saveData(appState.userProfile);
+                    showToast('Nombre actualizado con éxito.');
+                    renderAccount();
+                } else {
+                    showToast('El nombre no puede estar vacío.', 'error');
+                }
+            };
+            document.getElementById('reset-progress-btn').onclick = () => {
+                showModal(
+                    'Reiniciar Progreso',
+                    '¿Estás seguro? Perderás todo tu XP, tareas completadas y notas. Tu membresía VIP no se verá afectada.',
+                    [
+                        { text: 'Cancelar', class: 'bg-slate-200 text-slate-800', action: hideModal },
+                        { text: 'Sí, reiniciar', class: 'bg-red-500 text-white', action: () => {
+                            const profile = appState.userProfile;
+                            profile.xp = 0;
+                            profile.completedTasks = [];
+                            profile.notes = [];
+                            profile.aiChatHistory = [{ role: 'bot', text: '¡Hola! Soy EmprendeBot. Pídeme ejemplos, planes de acción o ideas para tu negocio.' }];
+                            saveData(profile);
+                            hideModal();
+                            renderAccount();
+                            showToast('Tu progreso ha sido reiniciado.');
+                        }}
+                    ]
+                );
+            };
+        }
+
+        // --- SISTEMA DE MODAL Y NOTIFICACIONES ---
+        function showModal(title, message, buttons = [], customHTML = '') {
+            modalTitle.textContent = title;
+            modalMessage.innerHTML = message + customHTML;
+            modalButtons.innerHTML = '';
+            buttons.forEach(btnInfo => {
+                const button = document.createElement('button');
+                button.textContent = btnInfo.text;
+                button.className = `px-4 py-2 rounded-lg font-semibold transition-colors ${btnInfo.class}`;
+                button.onclick = btnInfo.action;
+                modalButtons.appendChild(button);
+            });
+            modalOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                modalOverlay.style.opacity = '1';
+                modalBox.style.opacity = '1';
+                modalBox.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        function hideModal() {
+            modalOverlay.style.opacity = '0';
+            modalBox.style.opacity = '0';
+            modalBox.style.transform = 'scale(0.95)';
+            setTimeout(() => modalOverlay.classList.add('hidden'), 300);
+        }
+        
+        let toastTimeout;
+        function showToast(message, type = 'success') {
+            toastMessage.textContent = message;
+            toast.className = `fixed bottom-20 md:bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-xl z-50 ${type === 'error' ? 'bg-red-500' : 'bg-slate-800'}`;
+            toast.classList.remove('hidden');
+            toast.classList.add('show');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.classList.add('hidden'), 500);
+            }, 3000);
+        }
+
+        // --- LÓGICA DE LA APP ---
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function renderScreen() {
+            updateNav();
+            switch (appState.activeNav) {
+                case 'home': renderDashboard(); break;
+                case 'learn': renderLearn(); break;
+                case 'tools': renderTools(); break;
+                case 'community': renderCommunity(); break;
+                case 'blog': renderBlog(); break;
+                case 'account': renderAccount(); break;
+            }
+        }
+
+        function updateNav() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const navKey = item.dataset.nav;
+                if (navKey === appState.activeNav) {
+                    item.classList.add('text-sky-600');
+                    item.classList.add(item.closest('#main-nav') ? 'bg-sky-50' : 'text-sky-600');
+                } else {
+                    item.classList.remove('text-sky-600', 'bg-sky-50');
+                }
+            });
+        }
+
+        function handleTaskCompletion(taskId, sectionKey) {
+            if (appState.userProfile.completedTasks.includes(taskId)) return;
+            appState.userProfile.xp += XP_PER_TASK;
+            appState.userProfile.completedTasks.push(taskId);
+            saveData(appState.userProfile);
+            renderLessonDetail(sectionKey); // Re-render para mostrar cambio
+            showToast(`+${XP_PER_TASK} XP! Tarea completada.`);
+        }
+        
+        function addNote(title, content, lessonKey) {
+            const newNote = { id: Date.now().toString(), title, content, lessonKey };
+            appState.userProfile.notes.push(newNote);
+            saveData(appState.userProfile);
+        }
+
+        function deleteNote(id) {
+            appState.userProfile.notes = appState.userProfile.notes.filter(n => n.id !== id);
+            saveData(appState.userProfile);
+        }
+
+        // --- PERSISTENCIA DE DATOS (localStorage) ---
+        function loadData() {
+            const profileJson = localStorage.getItem('emprendeGuiaProfile');
+            if (profileJson) {
+                const loadedProfile = JSON.parse(profileJson);
+                const defaultProfile = {
+                    name: 'Emprendedor', xp: 0, completedTasks: [], notes: [], isVip: false, businessType: 'ecommerce',
+                    aiChatHistory: [{ role: 'bot', text: '¡Hola! Soy EmprendeBot. ¿En qué te puedo ayudar hoy?' }]
+                };
+                appState.userProfile = {...defaultProfile, ...loadedProfile};
+                // Asegurarse de que 'notes' sea un array
+                if (!Array.isArray(appState.userProfile.notes)) {
+                    appState.userProfile.notes = [];
+                }
+                appState.currentScreen = 'main';
+            } else {
+                appState.currentScreen = 'onboarding';
+            }
+            
+            const communityJson = localStorage.getItem('emprendeGuiaCommunity');
+            appState.communityPosts = communityJson ? JSON.parse(communityJson) : [];
+        }
+
+        function saveData(profile) {
+            localStorage.setItem('emprendeGuiaProfile', JSON.stringify(profile));
+        }
+        
+        function saveCommunityData(posts) {
+            localStorage.setItem('emprendeGuiaCommunity', JSON.stringify(posts));
+        }
+        
+        function init() {
+            // Onboarding
+            const businessTypesEl = document.getElementById('onboarding-business-types');
+            Object.entries(businessTypes).forEach(([key, value]) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full p-3 border rounded-lg text-left transition-colors hover:border-sky-500 hover:bg-sky-50';
+                btn.textContent = value;
+                btn.onclick = () => {
+                    if (appState.userProfile) appState.userProfile.businessType = key;
+                    businessTypesEl.querySelectorAll('button').forEach(b => b.classList.remove('bg-sky-500', 'text-white', 'border-sky-500'));
+                    btn.classList.add('bg-sky-500', 'text-white', 'border-sky-500');
+                };
+                businessTypesEl.appendChild(btn);
+            });
+
+            document.getElementById('onboarding-complete-btn').onclick = () => {
+                const name = document.getElementById('onboarding-name').value;
+                if (!name || !appState.userProfile.businessType) {
+                    showModal('Campos Incompletos', 'Por favor, completa tu nombre y selecciona un tipo de negocio para continuar.', [{ text: 'Entendido', class: 'bg-sky-500 text-white', action: hideModal }]);
+                    return;
+                }
+                appState.userProfile.name = name;
+                saveData(appState.userProfile);
+                appState.currentScreen = 'main';
+                initMainApp();
+            };
+
+            // Arranque
+            loadData();
+            setTimeout(() => {
+                if (appState.currentScreen === 'onboarding') {
+                    appState.userProfile = {
+                        name: '', xp: 0, completedTasks: [], notes: [], isVip: false, businessType: null,
+                        aiChatHistory: [{ role: 'bot', text: '¡Hola! Soy EmprendeBot. ¿En qué te puedo ayudar hoy?' }]
+                    };
+                    switchScreen('onboarding-screen');
+                } else {
+                    initMainApp();
+                }
+            }, 1500);
+        }
+
+        function initMainApp() {
+            switchScreen('main-app');
+            const navContainer = document.getElementById('main-nav');
+            const mobileNavContainer = document.getElementById('mobile-nav');
+            const navTemplate = document.getElementById('nav-item-template');
+            const mobileNavTemplate = document.getElementById('mobile-nav-item-template');
+            
+            navContainer.innerHTML = '';
+            mobileNavContainer.innerHTML = '';
+
+            Object.entries(navConfig).forEach(([key, config]) => {
+                const navItem = navTemplate.content.cloneNode(true).firstElementChild;
+                navItem.dataset.nav = key;
+                navItem.querySelector('.nav-icon').innerHTML = config.icon;
+                navItem.querySelector('.nav-text').textContent = config.text;
+                navItem.onclick = () => { appState.activeNav = key; renderScreen(); };
+                navContainer.appendChild(navItem);
+
+                const mobileNavItem = mobileNavTemplate.content.cloneNode(true).firstElementChild;
+                mobileNavItem.dataset.nav = key;
+                mobileNavItem.querySelector('.nav-icon').innerHTML = config.icon;
+                mobileNavItem.querySelector('.nav-text').textContent = config.text;
+                mobileNavItem.onclick = () => { appState.activeNav = key; renderScreen(); };
+                mobileNavContainer.appendChild(mobileNavItem);
+            });
+            renderScreen();
+        }
+
+        init();
+    });
+    </script>
+
+</body>
+</html>
